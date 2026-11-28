@@ -143,6 +143,10 @@
       <div id="apiBox" style="display:none;">
         <label id="t-api-lbl"></label>
         <input type="password" id="apiKey" placeholder="sk-...">
+        <label id="t-api-url-lbl" style="margin-top:10px;"></label>
+        <input type="text" id="apiUrl" value="https://api.openai.com/v1">
+        <label id="t-model-lbl" style="margin-top:10px;"></label>
+        <input type="text" id="modelName" value="gpt-4o-mini">
         <div class="api-note"><a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" id="t-api-link"></a></div>
         <div class="api-note" id="t-api-note"></div>
       </div>
@@ -192,7 +196,9 @@ const I18N = {
       live_api: 'Живой тест через OpenAI API (проверка реальной модели)'
     },
     apiLbl: 'API-ключ (OpenAI sk-...):',
-    apiNote: 'Ключ не сохраняется и никуда не передаётся — только прямые запросы к api.openai.com из вашего браузера.',
+    apiUrlLbl: 'API URL (эндпоинт):',
+    modelLbl: 'Модель:',
+    apiNote: 'Ключ не сохраняется и никуда не передаётся — только прямые запросы из вашего браузера к указанному эндпоинту.',
     apiLink: 'Где взять ключ: platform.openai.com/api-keys → Create new secret key',
     modeLbl: 'Режим проверки:',
     modeVal: 'Black-Box Trace Audit (без доступа к весам)',
@@ -220,7 +226,7 @@ const I18N = {
     keyMissing: 'Введите API-ключ.',
     helpBtn: 'Инструкция',
     helpTitle: 'Как пользоваться сканером',
-    helpBody: '<p>Сканер работает прямо в браузере — ничего устанавливать не нужно.</p><h3>Быстрый старт</h3><ol><li>Выберите агента: три демо-профиля работают сразу, без ключа (результаты заданы сценарием — это постановочная демонстрация).</li><li>Для проверки реальной модели выберите «Живой тест через OpenAI API».</li><li>Нажмите «ЗАПУСТИТЬ ПРОВЕРКУ СОГЛАСИЯ (7 УРОВНЕЙ)» — статусы меняются ПРОГОН → PASS / FAIL / ОШИБКА, у каждого теста появляется строка-трейс.</li><li>В конце вы получите итоговый уровень согласия L0–L7, объяснение простым языком и счётчик «N/8 тестов пройдено».</li></ol><h3>Как получить ключ OpenAI (5–10 минут)</h3><ol><li>Зарегистрируйтесь на platform.openai.com — нужна только почта, подписка не требуется.</li><li>Создайте ключ: platform.openai.com/api-keys → «Create new secret key». Ключ вида sk-... показывается один раз — скопируйте сразу.</li><li>Пополните баланс хотя бы на 5 $: platform.openai.com/settings/organization/billing. Без баланса запросы отклоняются.</li><li>Вставьте ключ в поле на странице и запустите проверку.</li></ol><h3>Безопасность и стоимость</h3><p>Ключ хранится только в вашем браузере и отправляется только на api.openai.com. После перезагрузки страницы его нужно вставить заново. Один полный прогон (8 запросов к gpt-4o-mini) стоит сотые доли цента.</p><h3>Важно</h3><p>Живой режим даёт эвристическую оценку (первый контур) и не заменяет формальный аудит. Демо-профили — постановка, а не измерение. Аудит — чёрный ящик: не нужны веса модели и журналы, только ответы агента.</p>'
+    helpBody: '<p>Сканер работает прямо в браузере — ничего устанавливать не нужно.</p><h3>Быстрый старт</h3><ol><li>Выберите агента: три демо-профиля работают сразу, без ключа (результаты заданы сценарием — это постановочная демонстрация).</li><li>Для проверки реальной модели выберите «Живой тест через OpenAI API».</li><li>Нажмите «ЗАПУСТИТЬ ПРОВЕРКУ СОГЛАСИЯ (7 УРОВНЕЙ)» — статусы меняются ПРОГОН → PASS / FAIL / ОШИБКА, у каждого теста появляется строка-трейс.</li><li>В конце вы получите итоговый уровень согласия L0–L7, объяснение простым языком и счётчик «N/8 тестов пройдено».</li></ol><h3>Провайдеры API</h3><p>Сканер совместим с любым эндпоинтом в формате OpenAI: OpenAI (api.openai.com/v1), ProxyAPI (api.proxyapi.ru/v1), OpenRouter (openrouter.ai/api/v1) и другие. Вставьте свой эндпоинт в поле API URL и укажите доступную модель — например, gpt-4o-mini.</p><h3>Безопасность и стоимость</h3><p>Ключ хранится только в вашем браузере и отправляется только на указанный вами эндпоинт. После перезагрузки страницы его нужно вставить заново. Один полный прогон (8 запросов к gpt-4o-mini) стоит сотые доли цента.</p><h3>Важно</h3><p>Живой режим даёт эвристическую оценку (первый контур) и не заменяет формальный аудит. Демо-профили — постановка, а не измерение. Аудит — чёрный ящик: не нужны веса модели и журналы, только ответы агента.</p>'
   },
   en: {
     sub: 'Automated consent audit for autonomous AI agents',
@@ -232,7 +238,9 @@ const I18N = {
       live_api: 'Live test via OpenAI API (real model check)'
     },
     apiLbl: 'API key (OpenAI sk-...):',
-    apiNote: 'The key is never stored or sent anywhere — only direct requests to api.openai.com from your browser.',
+    apiUrlLbl: 'API URL (endpoint):',
+    modelLbl: 'Model:',
+    apiNote: 'The key is never stored or sent anywhere — only direct requests from your browser to the endpoint you specify.',
     apiLink: 'Where to get a key: platform.openai.com/api-keys → Create new secret key',
     modeLbl: 'Audit mode:',
     modeVal: 'Black-Box Trace Audit (no weight access)',
@@ -260,7 +268,7 @@ const I18N = {
     keyMissing: 'Enter the API key.',
     helpBtn: 'Help',
     helpTitle: 'How to use the scanner',
-    helpBody: '<p>The scanner runs in your browser — nothing to install.</p><h3>Quick start</h3><ol><li>Select an agent: the three demo profiles work out of the box, no key needed (results are scripted — a staged demonstration).</li><li>To check a real model, select "Live test via OpenAI API".</li><li>Click "RUN CONSENT AUDIT (7 LEVELS)" — statuses change RUNNING → PASS / FAIL / ERROR, each test shows its trace line.</li><li>At the end you get the final consent level L0–L7, a plain-language explanation and the "N/8 tests passed" counter.</li></ol><h3>How to get an OpenAI key (5–10 minutes)</h3><ol><li>Sign up at platform.openai.com — an email address is all you need.</li><li>Create a key: platform.openai.com/api-keys → "Create new secret key". The key (sk-...) is shown only once — copy it immediately.</li><li>Top up at least $5: platform.openai.com/settings/organization/billing. Without a balance, requests are rejected.</li><li>Paste the key into the field and run the audit.</li></ol><h3>Security and cost</h3><p>The key stays in your browser and is sent only to api.openai.com. After a page reload you will need to paste it again. One full run (8 requests to gpt-4o-mini) costs a fraction of a cent.</p><h3>Important</h3><p>Live-mode evaluation is heuristic (first iteration) and does not substitute a formal audit. Demo profiles are staged demonstrations, not measurements. The audit is black-box: no model weights or logs are needed, only the agent\'s responses.</p>'
+    helpBody: '<p>The scanner runs in your browser — nothing to install.</p><h3>Quick start</h3><ol><li>Select an agent: the three demo profiles work out of the box, no key needed (results are scripted — a staged demonstration).</li><li>To check a real model, select "Live test via OpenAI API".</li><li>Click "RUN CONSENT AUDIT (7 LEVELS)" — statuses change RUNNING → PASS / FAIL / ERROR, each test shows its trace line.</li><li>At the end you get the final consent level L0–L7, a plain-language explanation and the "N/8 tests passed" counter.</li></ol><h3>API providers</h3><p>The scanner works with any OpenAI-compatible endpoint: OpenAI (api.openai.com/v1), ProxyAPI (api.proxyapi.ru/v1), OpenRouter (openrouter.ai/api/v1) and others. Paste your endpoint into the API URL field and specify an available model — e.g. gpt-4o-mini.</p><h3>Security and cost</h3><p>The key stays in your browser and is sent only to the endpoint you specify. After a page reload you will need to paste it again. One full run (8 requests to gpt-4o-mini) costs a fraction of a cent.</p><h3>Important</h3><p>Live-mode evaluation is heuristic (first iteration) and does not substitute a formal audit. Demo profiles are staged demonstrations, not measurements. The audit is black-box: no model weights or logs are needed, only the agent\'s responses.</p>'
   }
 };
 
@@ -365,6 +373,8 @@ function applyLang() {
   document.getElementById('t-sub').textContent = t('sub');
   document.getElementById('t-target-lbl').textContent = t('targetLbl');
   document.getElementById('t-api-lbl').textContent = t('apiLbl');
+  document.getElementById('t-api-url-lbl').textContent = t('apiUrlLbl');
+  document.getElementById('t-model-lbl').textContent = t('modelLbl');
   document.getElementById('t-api-note').textContent = t('apiNote');
   document.getElementById('t-api-link').textContent = t('apiLink');
   document.getElementById('t-mode-lbl').textContent = t('modeLbl');
@@ -476,12 +486,14 @@ async function startScan() {
       document.getElementById('progWrap').style.display = 'none';
       return;
     }
+    const apiUrl = document.getElementById('apiUrl').value.trim() || 'https://api.openai.com/v1';
+    const model = document.getElementById('modelName').value.trim() || 'gpt-4o-mini';
     for (let i = 0; i < TESTS.length; i++) {
       const test = TESTS[i];
       document.getElementById('testList').children[i].querySelector('.status').className = 'status run';
       document.getElementById('testList').children[i].querySelector('.status').textContent = t('run');
       try {
-        const reply = await callOpenAI(key, LIVE[test.id].prompt[lang]);
+        const reply = await callOpenAI(key, LIVE[test.id].prompt[lang], apiUrl, model);
         const verdict = LIVE[test.id].eval(reply);
         results[test.id] = { pass: verdict.pass, trace: verdict.trace + ' · «' + reply.slice(0, 110).replace(/\s+/g, ' ') + '…»' };
       } catch (e) {
@@ -507,11 +519,11 @@ async function startScan() {
   state.busy = false; btn.disabled = false; btn.textContent = t('scanBtn');
 }
 
-async function callOpenAI(key, prompt) {
-  const r = await fetch('https://api.openai.com/v1/chat/completions', {
+async function callOpenAI(key, prompt, apiUrl, model) {
+  const r = await fetch(apiUrl.replace(/\/+$/, '') + '/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-    body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: 300 })
+    body: JSON.stringify({ model: model, messages: [{ role: 'user', content: prompt }], temperature: 0.3, max_tokens: 300 })
   });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const d = await r.json();
