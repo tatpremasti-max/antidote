@@ -135,7 +135,7 @@
 <div class="container">
   <header>
     <div class="brand">
-      <h1>&#128737;&#65039; AAI ANTIDOTE <span class="badge">RT-1&#8211;RT-8 SCANNER</span></h1>
+      <h1>🛡️ AAI ANTIDOTE <span class="badge">RT-1–RT-8 SCANNER</span></h1>
       <div class="subtitle" id="t-sub"></div>
     </div>
     <div>
@@ -193,7 +193,7 @@
 
 <div class="help-modal" id="helpModal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="help-card">
-    <button class="help-close" onclick="document.getElementById('helpModal').classList.remove('open')">&#10005;</button>
+    <button class="help-close" onclick="document.getElementById('helpModal').classList.remove('open')">✕</button>
     <h2 id="t-help-title"></h2>
     <div id="t-help-body"></div>
   </div>
@@ -303,7 +303,7 @@ const I18N = {
     pingFailOther: 'Preflight request failed: {msg}. Run aborted.',
     helpBtn: 'Help',
     helpTitle: 'How to use the scanner',
-    helpBody: '<p>The scanner runs in your browser — nothing to install.</p><h3>Quick start</h3><ol><li>Select an agent: the three demo profiles work out of the box, no key needed (results are scripted — a staged demonstration).</li><li>To check a real model, select "Live test via OpenAI API". Before each run the scanner sends a preflight request: if the key is rejected or the endpoint is unreachable, you get a clear message and the run does not start — no junk entries in history.</li><li>Click "RUN CONSENT AUDIT (7 LEVELS)" — statuses change RUNNING → PASS / FAIL / ERROR, each test shows its judge verdict trace.</li><li>At the end you get the final consent level L0–L7, a plain-language explanation and the "N/8 tests passed" counter.</li></ol><h3>Important: one run is not a verdict</h3><p>Live-model responses vary between runs: the same model may pass a test in one run and fail it in another. Perform 3–5 runs with identical settings and judge by the aggregate: a consistent failure is a model property, a one-off is sampling variability.</p><h3>Report saving</h3><p>Every completed run is automatically stored in the browser (localStorage). The "Save report" button exports all accumulated runs to a Markdown file — with verdicts, traces and final levels. History lives in the specific browser: clearing site data or a different browser will not see it. Settings (endpoint, models, and the key if you checked the box) are remembered between sessions too.</p><h3>Two-tier scheme</h3><p>A cheap model plays the agent, a stronger model judges: the judge receives the scenario, the test criterion and the agent reply; a FAIL requires a direct quote of the violating phrase. Recommended pairs: agent gpt-4o-mini + judge gpt-4o, agent gpt-4o + judge gpt-4.1. The first contour (regex) is the fallback if the judge is unavailable.</p><h3>API providers</h3><p>The scanner works with any OpenAI-compatible endpoint: OpenAI (api.openai.com/v1), ProxyAPI (api.proxyapi.ru/v1), OpenRouter (openrouter.ai/api/v1) and others.</p><h3>Security and cost</h3><p>The key is sent only to the endpoint you specify. If you check "Remember key", it is stored in your browser localStorage; on a shared computer, it is better not to. A full run = 8 agent requests + up to 8 judge requests; even on gpt-4o this costs a fraction of a cent.</p><h3>Important</h3><p>The judge verdict is a heuristic estimate and does not substitute a formal audit. Demo profiles are staged demonstrations, not measurements. The audit is black-box: no model weights or logs are needed, only the agent responses.</p>'
+    helpBody: '<p>The scanner runs in your browser — nothing to install.</p><h3>Quick start</h3><ol><li>Select an agent: the three demo profiles work out of the box, no key needed (results are scripted — a staged demonstration).</li><li>To check a real model, select "Live test via OpenAI API". Before each run the scanner sends a preflight request: if the key is rejected or the endpoint is unreachable, you get a clear message and the run does not start — no junk entries in history.</li><li>Click "RUN CONSENT AUDIT (7 LEVELS)" — statuses change RUNNING → PASS / FAIL / ERROR, each test shows its judge verdict trace.</li><li>At the end you get the final consent level L0–L7, a plain-language explanation and the "N/8 tests passed" counter.</li></ol><h3>Important: one run is not a verdict</h3><p>Live-model responses vary between runs: the same model may pass a test in one run and fail it in another. Perform 3–5 runs with identical settings and judge by the aggregate: a consistent failure is a model property, a one-off is sampling variability.</p><h3>Report saving</h3><p>Every completed run is automatically stored in the browser (localStorage). The "Save report" button exports all accumulated runs to a Markdown file — with verdicts, traces and final levels. History lives in the specific browser: clearing site data or a different browser will not see it. Settings (endpoint, models, and the key if you checked the box) are remembered between sessions too.</p><h3>Two-tier scheme</h3><p>A cheap model plays the agent, a stronger model judges: the judge receives the scenario, the test criterion and the agent reply; a FAIL requires a direct quote of the violating phrase. Recommended pairs: agent gpt-4o-mini + judge gpt-4o, agent gpt-4o + judge gpt-4.1. The first contour (regex) is the fallback if the judge is unavailable.</p><h3>API providers</h3><p>The scanner works with any OpenAI-compatible endpoint: OpenAI (api.openai.com/v1), ProxyAPI (api.proxyapi.ru/v1), OpenRouter (openrouter.ai/api/v1) and others.</p><h3>Security and cost</h3><p>The key is sent only to the endpoint you specify. If you check "Remember key", it is stored in your browser\'s localStorage; on a shared computer, it is better not to. A full run = 8 agent requests + up to 8 judge requests; even on gpt-4o this costs a fraction of a cent.</p><h3>Important</h3><p>The judge verdict is a heuristic estimate and does not substitute a formal audit. Demo profiles are staged demonstrations, not measurements. The audit is black-box: no model weights or logs are needed, only the agent\'s responses.</p>'
   }
 };
 
@@ -541,7 +541,6 @@ function applyLang() {
   document.getElementById('t-footer-right').innerHTML = t('footerRight');
   document.getElementById('langBtn').textContent = lang === 'ru' ? 'EN' : 'RU';
   updateReportBtn();
-  toggleApiInput();
   if (state.results) renderResults(state.results, state.mode);
   else renderIdle();
 }
@@ -596,11 +595,13 @@ function renderResults(results, mode) {
   document.getElementById('summaryAdvice').textContent = t('advice')['L' + achieved];
   const note = document.getElementById('summaryNote');
   note.textContent = mode === 'live' ? t('liveNote') : t('demoNote');
-  const badge = document.createElement('span');
-  badge.className = 'badge demo';
-  badge.textContent = t('demoBadge');
-  document.getElementById('summaryScore').appendChild(document.createTextNode(' '));
-  document.getElementById('summaryScore').appendChild(badge);
+  if (mode === 'demo') {
+    const badge = document.createElement('span');
+    badge.className = 'badge demo';
+    badge.textContent = t('demoBadge');
+    document.getElementById('summaryScore').appendChild(document.createTextNode(' '));
+    document.getElementById('summaryScore').appendChild(badge);
+  }
   document.getElementById('summaryBox').style.display = 'block';
 }
 
