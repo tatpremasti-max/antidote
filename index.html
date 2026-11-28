@@ -57,6 +57,8 @@
   }
   select:focus, input:focus { outline: none; border-color: var(--accent); }
   .api-note { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+  .api-note a { color: var(--accent); text-decoration: none; }
+  .api-note a:hover { text-decoration: underline; }
   .scan-btn {
     width: 100%; padding: 14px; background: var(--accent); color: #05131d;
     border: none; border-radius: 8px; font-size: 1rem; font-weight: 700;
@@ -99,6 +101,24 @@
     font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;
   }
   footer a { color: var(--accent); text-decoration: none; }
+  .help-modal {
+    position: fixed; inset: 0; background: rgba(4, 8, 14, 0.75);
+    display: none; z-index: 10; padding: 20px; overflow-y: auto;
+  }
+  .help-modal.open { display: block; }
+  .help-card {
+    max-width: 700px; margin: 30px auto; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 10px; padding: 24px;
+  }
+  .help-card h2 { margin-bottom: 12px; font-size: 1.2rem; }
+  .help-card h3 { margin: 14px 0 6px; font-size: 0.98rem; color: var(--accent); }
+  .help-card p, .help-card li { font-size: 0.9rem; }
+  .help-card ol { margin: 6px 0 6px 20px; }
+  .help-close {
+    float: right; background: none; border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  .help-close:hover { border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -108,7 +128,10 @@
       <h1>🛡️ AAI ANTIDOTE <span class="badge">RT-1–RT-8 SCANNER</span></h1>
       <div class="subtitle" id="t-sub"></div>
     </div>
-    <button class="lang-btn" onclick="toggleLang()" id="langBtn">EN</button>
+    <div>
+      <button class="lang-btn" onclick="toggleHelp()" id="t-help-btn"></button>
+      <button class="lang-btn" onclick="toggleLang()" id="langBtn">EN</button>
+    </div>
   </header>
 
   <div class="card">
@@ -120,6 +143,7 @@
       <div id="apiBox" style="display:none;">
         <label id="t-api-lbl"></label>
         <input type="password" id="apiKey" placeholder="sk-...">
+        <div class="api-note"><a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" id="t-api-link"></a></div>
         <div class="api-note" id="t-api-note"></div>
       </div>
       <div id="infoBox">
@@ -146,6 +170,14 @@
   </footer>
 </div>
 
+<div class="help-modal" id="helpModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="help-card">
+    <button class="help-close" onclick="document.getElementById('helpModal').classList.remove('open')">✕</button>
+    <h2 id="t-help-title"></h2>
+    <div id="t-help-body"></div>
+  </div>
+</div>
+
 <script>
 let lang = 'ru';
 
@@ -161,6 +193,7 @@ const I18N = {
     },
     apiLbl: 'API-ключ (OpenAI sk-...):',
     apiNote: 'Ключ не сохраняется и никуда не передаётся — только прямые запросы к api.openai.com из вашего браузера.',
+    apiLink: 'Где взять ключ: platform.openai.com/api-keys → Create new secret key',
     modeLbl: 'Режим проверки:',
     modeVal: 'Black-Box Trace Audit (без доступа к весам)',
     scanBtn: 'ЗАПУСТИТЬ ПРОВЕРКУ СОГЛАСИЯ (7 УРОВНЕЙ)',
@@ -184,7 +217,10 @@ const I18N = {
     footerLeft: 'Ladder of Consent v1.1 · Vladimir Lermontov · <a href="https://doi.org/10.5281/zenodo.24440584" target="_blank" rel="noopener">DOI: 10.5281/zenodo.24440584</a>',
     footerRight: '<a href="https://doi.org/10.5281/zenodo.24567344" target="_blank" rel="noopener">Test Suite RT-1–RT-8 (MIT)</a> · <a href="https://doi.org/10.5281/zenodo.24084547" target="_blank" rel="noopener">BUDA-CHAT</a>',
     apiError: 'Не удалось подключиться к API. Проверьте ключ.',
-    keyMissing: 'Введите API-ключ.'
+    keyMissing: 'Введите API-ключ.',
+    helpBtn: 'Инструкция',
+    helpTitle: 'Как пользоваться сканером',
+    helpBody: '<p>Сканер работает прямо в браузере — ничего устанавливать не нужно.</p><h3>Быстрый старт</h3><ol><li>Выберите агента: три демо-профиля работают сразу, без ключа (результаты заданы сценарием — это постановочная демонстрация).</li><li>Для проверки реальной модели выберите «Живой тест через OpenAI API».</li><li>Нажмите «ЗАПУСТИТЬ ПРОВЕРКУ СОГЛАСИЯ (7 УРОВНЕЙ)» — статусы меняются ПРОГОН → PASS / FAIL / ОШИБКА, у каждого теста появляется строка-трейс.</li><li>В конце вы получите итоговый уровень согласия L0–L7, объяснение простым языком и счётчик «N/8 тестов пройдено».</li></ol><h3>Как получить ключ OpenAI (5–10 минут)</h3><ol><li>Зарегистрируйтесь на platform.openai.com — нужна только почта, подписка не требуется.</li><li>Создайте ключ: platform.openai.com/api-keys → «Create new secret key». Ключ вида sk-... показывается один раз — скопируйте сразу.</li><li>Пополните баланс хотя бы на 5 $: platform.openai.com/settings/organization/billing. Без баланса запросы отклоняются.</li><li>Вставьте ключ в поле на странице и запустите проверку.</li></ol><h3>Безопасность и стоимость</h3><p>Ключ хранится только в вашем браузере и отправляется только на api.openai.com. После перезагрузки страницы его нужно вставить заново. Один полный прогон (8 запросов к gpt-4o-mini) стоит сотые доли цента.</p><h3>Важно</h3><p>Живой режим даёт эвристическую оценку (первый контур) и не заменяет формальный аудит. Демо-профили — постановка, а не измерение. Аудит — чёрный ящик: не нужны веса модели и журналы, только ответы агента.</p>'
   },
   en: {
     sub: 'Automated consent audit for autonomous AI agents',
@@ -197,6 +233,7 @@ const I18N = {
     },
     apiLbl: 'API key (OpenAI sk-...):',
     apiNote: 'The key is never stored or sent anywhere — only direct requests to api.openai.com from your browser.',
+    apiLink: 'Where to get a key: platform.openai.com/api-keys → Create new secret key',
     modeLbl: 'Audit mode:',
     modeVal: 'Black-Box Trace Audit (no weight access)',
     scanBtn: 'RUN CONSENT AUDIT (7 LEVELS)',
@@ -220,7 +257,10 @@ const I18N = {
     footerLeft: 'Ladder of Consent v1.1 · Vladimir Lermontov · <a href="https://doi.org/10.5281/zenodo.24440584" target="_blank" rel="noopener">DOI: 10.5281/zenodo.24440584</a>',
     footerRight: '<a href="https://doi.org/10.5281/zenodo.24567344" target="_blank" rel="noopener">Test Suite RT-1–RT-8 (MIT)</a> · <a href="https://doi.org/10.5281/zenodo.24084547" target="_blank" rel="noopener">BUDA-CHAT</a>',
     apiError: 'Could not connect to the API. Check your key.',
-    keyMissing: 'Enter the API key.'
+    keyMissing: 'Enter the API key.',
+    helpBtn: 'Help',
+    helpTitle: 'How to use the scanner',
+    helpBody: '<p>The scanner runs in your browser — nothing to install.</p><h3>Quick start</h3><ol><li>Select an agent: the three demo profiles work out of the box, no key needed (results are scripted — a staged demonstration).</li><li>To check a real model, select "Live test via OpenAI API".</li><li>Click "RUN CONSENT AUDIT (7 LEVELS)" — statuses change RUNNING → PASS / FAIL / ERROR, each test shows its trace line.</li><li>At the end you get the final consent level L0–L7, a plain-language explanation and the "N/8 tests passed" counter.</li></ol><h3>How to get an OpenAI key (5–10 minutes)</h3><ol><li>Sign up at platform.openai.com — an email address is all you need.</li><li>Create a key: platform.openai.com/api-keys → "Create new secret key". The key (sk-...) is shown only once — copy it immediately.</li><li>Top up at least $5: platform.openai.com/settings/organization/billing. Without a balance, requests are rejected.</li><li>Paste the key into the field and run the audit.</li></ol><h3>Security and cost</h3><p>The key stays in your browser and is sent only to api.openai.com. After a page reload you will need to paste it again. One full run (8 requests to gpt-4o-mini) costs a fraction of a cent.</p><h3>Important</h3><p>Live-mode evaluation is heuristic (first iteration) and does not substitute a formal audit. Demo profiles are staged demonstrations, not measurements. The audit is black-box: no model weights or logs are needed, only the agent\'s responses.</p>'
   }
 };
 
@@ -326,8 +366,12 @@ function applyLang() {
   document.getElementById('t-target-lbl').textContent = t('targetLbl');
   document.getElementById('t-api-lbl').textContent = t('apiLbl');
   document.getElementById('t-api-note').textContent = t('apiNote');
+  document.getElementById('t-api-link').textContent = t('apiLink');
   document.getElementById('t-mode-lbl').textContent = t('modeLbl');
   document.getElementById('t-mode-val').value = t('modeVal');
+  document.getElementById('t-help-btn').textContent = t('helpBtn');
+  document.getElementById('t-help-title').textContent = t('helpTitle');
+  document.getElementById('t-help-body').innerHTML = t('helpBody');
   const btn = document.getElementById('scanBtn');
   btn.textContent = state.busy ? t('scanning') : t('scanBtn');
   const sel = document.getElementById('agentProfile');
@@ -347,6 +391,10 @@ function applyLang() {
 }
 
 function toggleLang() { lang = lang === 'ru' ? 'en' : 'ru'; applyLang(); }
+
+function toggleHelp() {
+  document.getElementById('helpModal').classList.toggle('open');
+}
 
 function toggleApiInput() {
   const isLive = document.getElementById('agentProfile').value === 'live_api';
