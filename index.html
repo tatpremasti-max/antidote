@@ -51,11 +51,15 @@
   .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
   @media (max-width: 650px) { .controls { grid-template-columns: 1fr; } }
   label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
-  select, input {
+  select, input[type="text"], input[type="password"] {
     width: 100%; padding: 10px 12px; background: var(--bg); color: var(--text);
     border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem;
   }
   select:focus, input:focus { outline: none; border-color: var(--accent); }
+  .remember-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.82rem; color: var(--muted);
+  }
+  .remember-row input[type="checkbox"] { width: auto; accent-color: var(--accent); }
   .api-note { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
   .api-note a { color: var(--accent); text-decoration: none; }
   .api-note a:hover { text-decoration: underline; }
@@ -149,6 +153,10 @@
       <div id="apiBox" style="display:none;">
         <label id="t-api-lbl"></label>
         <input type="password" id="apiKey" placeholder="sk-...">
+        <div class="remember-row">
+          <input type="checkbox" id="rememberKey">
+          <label for="rememberKey" id="t-remember-lbl" style="margin:0;"></label>
+        </div>
         <label id="t-api-url-lbl" style="margin-top:10px;"></label>
         <input type="text" id="apiUrl" value="https://api.proxyapi.ru/v1">
         <label id="t-model-lbl" style="margin-top:10px;"></label>
@@ -205,21 +213,23 @@ const I18N = {
       live_api: 'Живой тест через OpenAI API (проверка реальной модели)'
     },
     apiLbl: 'API-ключ (OpenAI sk-...):',
+    rememberLbl: 'Запомнить ключ на этом устройстве (localStorage)',
     apiUrlLbl: 'API URL (эндпоинт):',
     modelLbl: 'Модель агента:',
     judgeLbl: 'Модель судьи (сильнее агента):',
-    apiNote: 'Ключ не сохраняется и никуда не передаётся — только прямые запросы из вашего браузера к указанному эндпоинту.',
+    apiNote: 'Ключ отправляется только на указанный вами эндпоинт прямыми запросами из вашего браузера.',
     apiLink: 'Где взять ключ: platform.openai.com/api-keys → Create new secret key',
     modeLbl: 'Режим проверки:',
     modeVal: 'Black-Box Trace Audit (без доступа к весам)',
     scanBtn: 'ЗАПУСТИТЬ ПРОВЕРКУ СОГЛАСИЯ (7 УРОВНЕЙ)',
     scanning: 'ИДЁТ ПРОВЕРКА...',
+    preflight: 'ПРОВЕРКА КЛЮЧА И ЭНДПОИНТА...',
     reportBtn: 'СОХРАНИТЬ ОТЧЁТ',
     reportBtnCount: 'СОХРАНИТЬ ОТЧЁТ ({n} прогонов)',
     reportEmpty: 'Прогонов пока нет — история появится после первой проверки.',
     demoBadge: 'DEMO MODE',
     demoNote: 'Профили имитируют поведение по заданному сценарию. Тесты не подключены к живому агенту.',
-    liveNote: 'Живой режим: вердикты выносит модель-судья по критериям теста, FAIL требует цитаты нарушения; регулярки — запасной вариант.',
+    liveNote: 'Живой режим: вердикты выносит модель-судья по критериям теста, FAIL требует цитаты нарушения; регулярки — запасной вариант. Один прогон — не вердикт: результаты живой модели вариативны, проводите 3–5 прогонов и сравнивайте.',
     level: 'Итоговый уровень согласия',
     testsPassed: 'тестов пройдено',
     wait: 'ОЖИДАНИЕ', run: 'ПРОГОН...', pass: 'PASS', fail: 'FAIL', err: 'ОШИБКА',
@@ -237,9 +247,12 @@ const I18N = {
     footerRight: '<a href="https://doi.org/10.5281/zenodo.24567344" target="_blank" rel="noopener">Test Suite RT-1–RT-8 (MIT)</a> · <a href="https://doi.org/10.5281/zenodo.24084547" target="_blank" rel="noopener">BUDA-CHAT</a>',
     apiError: 'Не удалось подключиться к API. Проверьте ключ.',
     keyMissing: 'Введите API-ключ.',
+    pingFailNet: 'Эндпоинт недоступен или не отвечает: {msg}. Проверьте URL эндпоинта и подключение к сети. Прогон не запущен.',
+    pingFailKey: 'Эндпоинт отклонил ключ или запрос (HTTP {status}). Проверьте API-ключ и доступность модели на этом эндпоинте. Прогон не запущен.',
+    pingFailOther: 'Пробный запрос завершился ошибкой: {msg}. Прогон не запущен.',
     helpBtn: 'Инструкция',
     helpTitle: 'Как пользоваться сканером',
-    helpBody: '<p>Сканер работает прямо в браузере — ничего устанавливать не нужно.</p><h3>Быстрый старт</h3><ol><li>Выберите агента: три демо-профиля работают сразу, без ключа (результаты заданы сценарием — это постановочная демонстрация).</li><li>Для проверки реальной модели выберите «Живой тест через OpenAI API».</li><li>Нажмите «ЗАПУСТИТЬ ПРОВЕРКУ СОГЛАСИЯ (7 УРОВНЕЙ)» — статусы меняются ПРОГОН → PASS / FAIL / ОШИБКА, у каждого теста появляется строка-трейс с вердиктом судьи.</li><li>В конце вы получите итоговый уровень согласия L0–L7, объяснение простым языком и счётчик «N/8 тестов пройдено».</li></ol><h3>Сохранение отчёта</h3><p>Каждый завершённый прогон автоматически сохраняется в браузере (localStorage). Кнопка «Сохранить отчёт» выгружает все накопленные прогоны в Markdown-файл — с вердиктами, трейсами и итоговыми уровнями. История живёт в конкретном браузере: чистка данных сайта или другой браузер её не увидят.</p><h3>Двухуровневая схема</h3><p>Дешёвая модель играет агента, сильная модель судит: судья получает сценарий, критерий теста и ответ агента; FAIL выносится только с прямой цитатой нарушающей фразы. Рекомендуемые пары: агент gpt-4o-mini + судья gpt-4o, агент gpt-4o + судья gpt-4.1. Первый контур (регулярки) — запасной, если судья недоступен.</p><h3>Провайдеры API</h3><p>Сканер совместим с любым эндпоинтом в формате OpenAI: OpenAI (api.openai.com/v1), ProxyAPI (api.proxyapi.ru/v1), OpenRouter (openrouter.ai/api/v1) и другие.</p><h3>Безопасность и стоимость</h3><p>Ключ хранится только в вашем браузере и отправляется только на указанный вами эндпоинт. Один полный прогон — 8 запросов агента + до 8 запросов судьи; даже на gpt-4o это доли цента.</p><h3>Важно</h3><p>Вердикт судьи — эвристическая оценка и не заменяет формальный аудит. Демо-профили — постановка, а не измерение. Аудит — чёрный ящик: не нужны веса модели и журналы, только ответы агента.</p>'
+    helpBody: '<p>Сканер работает прямо в браузере — ничего устанавливать не нужно.</p><h3>Быстрый старт</h3><ol><li>Выберите агента: три демо-профиля работают сразу, без ключа (результаты заданы сценарием — это постановочная демонстрация).</li><li>Для проверки реальной модели выберите «Живой тест через OpenAI API». Перед каждым прогоном сканер отправляет пробный запрос: если ключ не принят или эндпоинт недоступен, вы увидите понятное сообщение, и прогон не запустится — мусорных записей в истории не появится.</li><li>Нажмите «ЗАПУСТИТЬ ПРОВЕРКУ СОГЛАСИЯ (7 УРОВНЕЙ)» — статусы меняются ПРОГОН → PASS / FAIL / ОШИБКА, у каждого теста появляется строка-трейс с вердиктом судьи.</li><li>В конце вы получите итоговый уровень согласия L0–L7, объяснение простым языком и счётчик «N/8 тестов пройдено».</li></ol><h3>Важно: один прогон — не вердикт</h3><p>Ответы живой модели вариативны между запусками: одна и та же модель может в одном прогоне пройти тест, а в другом — провалить его. Проводите 3–5 прогонов при одинаковых настройках и делайте выводы по совокупности: устойчивый провал — свойство модели, единичный — вариативность выборки.</p><h3>Сохранение отчёта</h3><p>Каждый завершённый прогон автоматически сохраняется в браузере (localStorage). Кнопка «Сохранить отчёт» выгружает все накопленные прогоны в Markdown-файл — с вердиктами, трейсами и итоговыми уровнями. История живёт в конкретном браузере: чистка данных сайта или другой браузер её не увидят. Настройки (эндпоинт, модели, ключ — если отметили галочку) тоже запоминаются между сессиями.</p><h3>Двухуровневая схема</h3><p>Дешёвая модель играет агента, сильная модель судит: судья получает сценарий, критерий теста и ответ агента; FAIL выносится только с прямой цитатой нарушающей фразы. Рекомендуемые пары: агент gpt-4o-mini + судья gpt-4o, агент gpt-4o + судья gpt-4.1. Первый контур (регулярки) — запасной, если судья недоступен.</p><h3>Провайдеры API</h3><p>Сканер совместим с любым эндпоинтом в формате OpenAI: OpenAI (api.openai.com/v1), ProxyAPI (api.proxyapi.ru/v1), OpenRouter (openrouter.ai/api/v1) и другие.</p><h3>Безопасность и стоимость</h3><p>Ключ отправляется только на указанный вами эндпоинт. Если отметили «Запомнить ключ», он хранится в localStorage вашего браузера; на общем компьютере галочку лучше не ставить. Один полный прогон — 8 запросов агента + до 8 запросов судьи; даже на gpt-4o это доли цента.</p><h3>Важно</h3><p>Вердикт судьи — эвристическая оценка и не заменяет формальный аудит. Демо-профили — постановка, а не измерение. Аудит — чёрный ящик: не нужны веса модели и журналы, только ответы агента.</p>'
   },
   en: {
     sub: 'Automated consent audit for autonomous AI agents',
@@ -251,21 +264,23 @@ const I18N = {
       live_api: 'Live test via OpenAI API (real model check)'
     },
     apiLbl: 'API key (OpenAI sk-...):',
+    rememberLbl: 'Remember key on this device (localStorage)',
     apiUrlLbl: 'API URL (endpoint):',
     modelLbl: 'Agent model:',
     judgeLbl: 'Judge model (stronger than agent):',
-    apiNote: 'The key is never stored or sent anywhere — only direct requests from your browser to the endpoint you specify.',
+    apiNote: 'The key is sent only to the endpoint you specify, via direct requests from your browser.',
     apiLink: 'Where to get a key: platform.openai.com/api-keys → Create new secret key',
     modeLbl: 'Audit mode:',
     modeVal: 'Black-Box Trace Audit (no weight access)',
     scanBtn: 'RUN CONSENT AUDIT (7 LEVELS)',
     scanning: 'SCANNING...',
+    preflight: 'CHECKING KEY AND ENDPOINT...',
     reportBtn: 'SAVE REPORT',
     reportBtnCount: 'SAVE REPORT ({n} runs)',
     reportEmpty: 'No runs yet — history appears after the first scan.',
     demoBadge: 'DEMO MODE',
     demoNote: 'Profiles simulate behavior by script. Tests are not connected to a live agent.',
-    liveNote: 'Live mode: verdicts are issued by a judge model using per-test criteria; a FAIL requires a quoted violating phrase. Regex is the fallback.',
+    liveNote: 'Live mode: verdicts are issued by a judge model using per-test criteria; a FAIL requires a quoted violating phrase. Regex is the fallback. One run is not a verdict: live-model results vary between runs — perform 3–5 runs and compare.',
     level: 'Final consent level',
     testsPassed: 'tests passed',
     wait: 'PENDING', run: 'RUNNING...', pass: 'PASS', fail: 'FAIL', err: 'ERROR',
@@ -283,9 +298,12 @@ const I18N = {
     footerRight: '<a href="https://doi.org/10.5281/zenodo.24567344" target="_blank" rel="noopener">Test Suite RT-1–RT-8 (MIT)</a> · <a href="https://doi.org/10.5281/zenodo.24084547" target="_blank" rel="noopener">BUDA-CHAT</a>',
     apiError: 'Could not connect to the API. Check your key.',
     keyMissing: 'Enter the API key.',
+    pingFailNet: 'Endpoint unreachable or not responding: {msg}. Check the endpoint URL and your network connection. Run aborted.',
+    pingFailKey: 'The endpoint rejected the key or the request (HTTP {status}). Check the API key and model availability on this endpoint. Run aborted.',
+    pingFailOther: 'Preflight request failed: {msg}. Run aborted.',
     helpBtn: 'Help',
     helpTitle: 'How to use the scanner',
-    helpBody: '<p>The scanner runs in your browser — nothing to install.</p><h3>Quick start</h3><ol><li>Select an agent: the three demo profiles work out of the box, no key needed (results are scripted — a staged demonstration).</li><li>To check a real model, select "Live test via OpenAI API".</li><li>Click "RUN CONSENT AUDIT (7 LEVELS)" — statuses change RUNNING → PASS / FAIL / ERROR, each test shows its judge verdict trace.</li><li>At the end you get the final consent level L0–L7, a plain-language explanation and the "N/8 tests passed" counter.</li></ol><h3>Report saving</h3><p>Every completed run is automatically stored in the browser (localStorage). The "Save report" button exports all accumulated runs to a Markdown file — with verdicts, traces and final levels. History lives in the specific browser: clearing site data or a different browser will not see it.</p><h3>Two-tier scheme</h3><p>A cheap model plays the agent, a stronger model judges: the judge receives the scenario, the test criterion and the agent reply; a FAIL requires a direct quote of the violating phrase. Recommended pairs: agent gpt-4o-mini + judge gpt-4o, agent gpt-4o + judge gpt-4.1. The first contour (regex) is the fallback if the judge is unavailable.</p><h3>API providers</h3><p>The scanner works with any OpenAI-compatible endpoint: OpenAI (api.openai.com/v1), ProxyAPI (api.proxyapi.ru/v1), OpenRouter (openrouter.ai/api/v1) and others.</p><h3>Security and cost</h3><p>The key stays in your browser and is sent only to the endpoint you specify. A full run = 8 agent requests + up to 8 judge requests; even on gpt-4o this costs a fraction of a cent.</p><h3>Important</h3><p>The judge verdict is a heuristic estimate and does not substitute a formal audit. Demo profiles are staged demonstrations, not measurements. The audit is black-box: no model weights or logs are needed, only the agent\'s responses.</p>'
+    helpBody: '<p>The scanner runs in your browser — nothing to install.</p><h3>Quick start</h3><ol><li>Select an agent: the three demo profiles work out of the box, no key needed (results are scripted — a staged demonstration).</li><li>To check a real model, select "Live test via OpenAI API". Before each run the scanner sends a preflight request: if the key is rejected or the endpoint is unreachable, you get a clear message and the run does not start — no junk entries in history.</li><li>Click "RUN CONSENT AUDIT (7 LEVELS)" — statuses change RUNNING → PASS / FAIL / ERROR, each test shows its judge verdict trace.</li><li>At the end you get the final consent level L0–L7, a plain-language explanation and the "N/8 tests passed" counter.</li></ol><h3>Important: one run is not a verdict</h3><p>Live-model responses vary between runs: the same model may pass a test in one run and fail it in another. Perform 3–5 runs with identical settings and judge by the aggregate: a consistent failure is a model property, a one-off is sampling variability.</p><h3>Report saving</h3><p>Every completed run is automatically stored in the browser (localStorage). The "Save report" button exports all accumulated runs to a Markdown file — with verdicts, traces and final levels. History lives in the specific browser: clearing site data or a different browser will not see it. Settings (endpoint, models, and the key if you checked the box) are remembered between sessions too.</p><h3>Two-tier scheme</h3><p>A cheap model plays the agent, a stronger model judges: the judge receives the scenario, the test criterion and the agent reply; a FAIL requires a direct quote of the violating phrase. Recommended pairs: agent gpt-4o-mini + judge gpt-4o, agent gpt-4o + judge gpt-4.1. The first contour (regex) is the fallback if the judge is unavailable.</p><h3>API providers</h3><p>The scanner works with any OpenAI-compatible endpoint: OpenAI (api.openai.com/v1), ProxyAPI (api.proxyapi.ru/v1), OpenRouter (openrouter.ai/api/v1) and others.</p><h3>Security and cost</h3><p>The key is sent only to the endpoint you specify. If you check "Remember key", it is stored in your browser\'s localStorage; on a shared computer, it is better not to. A full run = 8 agent requests + up to 8 judge requests; even on gpt-4o this costs a fraction of a cent.</p><h3>Important</h3><p>The judge verdict is a heuristic estimate and does not substitute a formal audit. Demo profiles are staged demonstrations, not measurements. The audit is black-box: no model weights or logs are needed, only the agent\'s responses.</p>'
   }
 };
 
@@ -407,6 +425,7 @@ const LIVE = {
 
 let state = { results: null, mode: null, busy: false };
 const REPORT_KEY = 'aai_antidote_runs';
+const SETTINGS_KEY = 'aai_antidote_settings';
 
 function loadHistory() {
   try { return JSON.parse(localStorage.getItem(REPORT_KEY)) || []; }
@@ -418,6 +437,31 @@ function saveRunToHistory(run) {
   h.push(run);
   try { localStorage.setItem(REPORT_KEY, JSON.stringify(h)); } catch (e) { /* переполнение — игнорируем */ }
   updateReportBtn();
+}
+
+// Настройки: эндпоинт, модели и опционально ключ — между сессиями
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+    if (!s) return;
+    if (s.apiUrl) document.getElementById('apiUrl').value = s.apiUrl;
+    if (s.modelName) document.getElementById('modelName').value = s.modelName;
+    if (s.judgeModel) document.getElementById('judgeModel').value = s.judgeModel;
+    if (s.apiKey && s.rememberKey) document.getElementById('apiKey').value = s.apiKey;
+    document.getElementById('rememberKey').checked = !!s.rememberKey;
+  } catch (e) { /* повреждённые настройки — начинаем с дефолтов */ }
+}
+
+function saveSettings() {
+  const remember = document.getElementById('rememberKey').checked;
+  const s = {
+    apiUrl: document.getElementById('apiUrl').value.trim(),
+    modelName: document.getElementById('modelName').value.trim(),
+    judgeModel: document.getElementById('judgeModel').value.trim(),
+    rememberKey: remember,
+    apiKey: remember ? document.getElementById('apiKey').value.trim() : null
+  };
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch (e) { /* переполнение — игнорируем */ }
 }
 
 function updateReportBtn() {
@@ -471,6 +515,7 @@ function applyLang() {
   document.getElementById('t-sub').textContent = t('sub');
   document.getElementById('t-target-lbl').textContent = t('targetLbl');
   document.getElementById('t-api-lbl').textContent = t('apiLbl');
+  document.getElementById('t-remember-lbl').textContent = t('rememberLbl');
   document.getElementById('t-api-url-lbl').textContent = t('apiUrlLbl');
   document.getElementById('t-model-lbl').textContent = t('modelLbl');
   document.getElementById('t-judge-lbl').textContent = t('judgeLbl');
@@ -585,6 +630,29 @@ async function startScan() {
     const model = document.getElementById('modelName').value.trim() || 'gpt-4o-mini';
     const judge = document.getElementById('judgeModel').value.trim() || model;
     meta.model = model; meta.judge = judge;
+
+    // Предполётная проверка: дешёвый запрос к эндпоинту до начала прогона
+    btn.textContent = t('preflight');
+    try {
+      await callOpenAI(key, 'ping', apiUrl, model, 5, 0);
+    } catch (e) {
+      let msg;
+      if (e.status) {
+        msg = t('pingFailKey').replace('{status}', e.status);
+      } else if (e.isNetwork) {
+        msg = t('pingFailNet').replace('{msg}', e.message);
+      } else {
+        msg = t('pingFailOther').replace('{msg}', e.message);
+      }
+      alert(msg);
+      state.busy = false; btn.disabled = false; btn.textContent = t('scanBtn');
+      document.getElementById('progWrap').style.display = 'none';
+      return;
+    }
+    // Проверка пройдена — запоминаем настройки (включая ключ, если отмечено)
+    saveSettings();
+    btn.textContent = t('scanning');
+
     for (let i = 0; i < TESTS.length; i++) {
       const test = TESTS[i];
       document.getElementById('testList').children[i].querySelector('.status').className = 'status run';
@@ -641,12 +709,23 @@ async function startScan() {
 }
 
 async function callOpenAI(key, prompt, apiUrl, model, maxTokens, temperature) {
-  const r = await fetch(apiUrl.replace(/\/+$/, '') + '/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-    body: JSON.stringify({ model: model, messages: [{ role: 'user', content: prompt }], temperature: (temperature !== undefined ? temperature : 0.3), max_tokens: maxTokens || 300 })
-  });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
+  let r;
+  try {
+    r = await fetch(apiUrl.replace(/\/+$/, '') + '/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      body: JSON.stringify({ model: model, messages: [{ role: 'user', content: prompt }], temperature: (temperature !== undefined ? temperature : 0.3), max_tokens: maxTokens || 300 })
+    });
+  } catch (e) {
+    const err = new Error('Failed to fetch');
+    err.isNetwork = true;
+    throw err;
+  }
+  if (!r.ok) {
+    const err = new Error('HTTP ' + r.status);
+    err.status = r.status;
+    throw err;
+  }
   const d = await r.json();
   return d.choices[0].message.content;
 }
@@ -664,6 +743,7 @@ async function judgeVerdict(key, apiUrl, judge, scenario, testDesc, criteria, re
   return { pass: pass, trace: (pass ? 'Judge PASS' : 'Judge FAIL') + (reasoning ? ': ' + reasoning : '') };
 }
 
+loadSettings();
 applyLang();
 </script>
 </body>
