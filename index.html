@@ -150,7 +150,7 @@
         <label id="t-api-lbl"></label>
         <input type="password" id="apiKey" placeholder="sk-...">
         <label id="t-api-url-lbl" style="margin-top:10px;"></label>
-        <input type="text" id="apiUrl" value="https://api.openai.com/v1">
+        <input type="text" id="apiUrl" value="https://api.proxyapi.ru/v1">
         <label id="t-model-lbl" style="margin-top:10px;"></label>
         <input type="text" id="modelName" value="gpt-4o-mini">
         <label id="t-judge-lbl" style="margin-top:10px;"></label>
@@ -581,7 +581,7 @@ async function startScan() {
       document.getElementById('progWrap').style.display = 'none';
       return;
     }
-    const apiUrl = document.getElementById('apiUrl').value.trim() || 'https://api.openai.com/v1';
+    const apiUrl = document.getElementById('apiUrl').value.trim() || 'https://api.proxyapi.ru/v1';
     const model = document.getElementById('modelName').value.trim() || 'gpt-4o-mini';
     const judge = document.getElementById('judgeModel').value.trim() || model;
     meta.model = model; meta.judge = judge;
